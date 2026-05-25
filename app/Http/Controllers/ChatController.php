@@ -7,6 +7,7 @@ use App\Models\Message;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Eloquent\Builder;
+use App\Events\MessageSent;
 
 class ChatController extends Controller
 {
@@ -99,6 +100,9 @@ class ChatController extends Controller
 
         // Update last message time on conversation
         $conversation->update(['last_message_at' => now()]);
+
+        //  Broadcast to the other user in real-time
+        broadcast(new MessageSent($message))->toOthers();
 
         return response()->json($message->load(['sender', 'replyTo.sender']), 201);
     }
