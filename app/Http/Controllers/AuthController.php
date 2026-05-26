@@ -21,8 +21,12 @@ class AuthController extends Controller
             'password' => Hash::make($request->password),
         ]);
 
+        
+        // Every self-registered user gets the 'user' role
+        $user->assignRole('user');
+
         $token = Auth::guard('api')->login($user);
-        return response()->json(['token' => $token, 'user' => $user]);
+        return response()->json(['token' => $token, 'user'  => $this->formatUser($user),]);
     }
 
     public function login(Request $request) {
@@ -39,6 +43,18 @@ class AuthController extends Controller
     }
 
     public function me() {
+        $user = Auth::guard('api')->user();
         return response()->json(Auth::guard('api')->user());
+    }
+
+    //Format user with role included — React needs this to know whether to show the Admin panel or not
+    private function formatUser(User $user): array
+    {
+        return [
+            'id'    => $user->id,
+            'name'  => $user->name,
+            'email' => $user->email,
+            'role'  => $user->roles->first()?->name ?? 'user',
+        ];
     }
 }

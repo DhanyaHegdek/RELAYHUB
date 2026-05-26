@@ -27,15 +27,17 @@ Route::middleware('auth:api')->group(function () {
         );
     });
 
-    // Conversations & Messages
-    Route::post('/conversations',               [ChatController::class, 'startConversation']);
-    Route::get('/conversations',                [ChatController::class, 'getConversations']);
-    Route::get('/conversations/{id}/messages',  [ChatController::class, 'getMessages']);
-    Route::post('/conversations/{id}/messages', [ChatController::class, 'sendMessage']);
+     // Chat routes — requires 'chat' permission 
+    Route::middleware('permission:chat')->group(function () {
+        Route::post('/conversations',               [ChatController::class, 'startConversation']);
+        Route::get('/conversations',                [ChatController::class, 'getConversations']);
+        Route::get('/conversations/{id}/messages',  [ChatController::class, 'getMessages']);
+        Route::post('/conversations/{id}/messages', [ChatController::class, 'sendMessage']);
+    });
 
 
 
-     // ── Admin routes — requires 'admin' role ──────────────────────────────────
+     // Admin routes — requires 'admin' role
     Route::middleware('role:admin')->prefix('admin')->group(function () {
         Route::get('/users',             [AdminController::class, 'listUsers']);   
         Route::get('/users/{id}',        [AdminController::class, 'viewProfile']);
