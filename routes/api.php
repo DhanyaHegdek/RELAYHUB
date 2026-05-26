@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ChatController;
 use Illuminate\Support\Facades\Broadcast;
+use App\Http\Controllers\AdminController;
 
 // Public routes — no login needed
 Route::post('/register', [AuthController::class, 'register']);
@@ -31,6 +32,17 @@ Route::middleware('auth:api')->group(function () {
     Route::get('/conversations',                [ChatController::class, 'getConversations']);
     Route::get('/conversations/{id}/messages',  [ChatController::class, 'getMessages']);
     Route::post('/conversations/{id}/messages', [ChatController::class, 'sendMessage']);
+
+
+
+     // ── Admin routes — requires 'admin' role ──────────────────────────────────
+    Route::middleware('role:admin')->prefix('admin')->group(function () {
+        Route::get('/users',             [AdminController::class, 'listUsers']);   
+        Route::get('/users/{id}',        [AdminController::class, 'viewProfile']);
+        Route::post('/users',            [AdminController::class, 'createUser']);  
+        Route::delete('/users/{id}',     [AdminController::class, 'deleteUser']);   
+        Route::put('/users/{id}/role',   [AdminController::class, 'changeRole']);  
+    });
 
 
 
