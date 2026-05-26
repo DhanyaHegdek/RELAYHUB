@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
@@ -8,7 +9,8 @@ use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
-    public function register(Request $request) {
+    public function register(Request $request)
+    {
         $request->validate([
             'name'     => 'required|string',
             'email'    => 'required|email|unique:users',
@@ -21,33 +23,42 @@ class AuthController extends Controller
             'password' => Hash::make($request->password),
         ]);
 
-        
         // Every self-registered user gets the 'user' role
         $user->assignRole('user');
 
         $token = Auth::guard('api')->login($user);
-        return response()->json(['token' => $token, 'user'  => $this->formatUser($user),]);
+
+        return response()->json([
+            'token' => $token,
+            'user'  => $this->formatUser($user),
+        ]);
     }
 
-    public function login(Request $request) {
+    public function login(Request $request)
+    {
         $credentials = $request->only('email', 'password');
+
         if (!$token = Auth::guard('api')->attempt($credentials)) {
             return response()->json(['error' => 'Invalid credentials'], 401);
         }
+
         return response()->json(['token' => $token]);
     }
 
-    public function logout() {
+    public function logout()
+    {
         Auth::guard('api')->logout();
         return response()->json(['message' => 'Logged out']);
     }
 
-    public function me() {
+    public function me()
+    {
         $user = Auth::guard('api')->user();
-        return response()->json(Auth::guard('api')->user());
+        return response()->json($this->formatUser($user));
     }
 
     //Format user with role included — React needs this to know whether to show the Admin panel or not
+     
     private function formatUser(User $user): array
     {
         return [
