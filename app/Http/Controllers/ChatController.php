@@ -106,4 +106,26 @@ class ChatController extends Controller
 
         return response()->json($message->load(['sender', 'replyTo.sender']), 201);
     }
+
+    public function searchMessages(Request $request, $conversationId) {
+        $request->validate(['q' => 'required|string|min:1|max:255']);
+
+        $userId = Auth::id();
+
+        // Security — user must belong to this conversation
+        Conversation::where('id', $conversationId)
+            ->where(function($q) use ($userId) {
+                $q->where('user_one_id', $userId)
+                ->orWhere('user_two_id', $userId);
+            })->firstOrFail();
+
+        $messages = Message::where('conversation_id', $conversationId)
+            ->where('body', 'ILIKE', '%' . $request->q . '%') // ILIKE = case-insensitive for PostgreSQL
+            ->with(['sender', 'replyTo.sender'])
+            ->orderBy('created_at', 'desc')
+            ->limit(50)
+            ->get();
+
+        return response()->json($messages);
+    }
 }
