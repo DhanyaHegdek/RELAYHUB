@@ -37,7 +37,9 @@ class AuthController extends Controller
     public function login(Request $request)
     {
         $credentials = $request->only('email', 'password');
-
+        
+        //         Why attempt() instead of manual lookup?
+        // attempt() handles everything — finding the user, checking the password hash, generating the token — all in one call. It also fires Laravel's login events which are useful for logging and audit trails later.
         if (!$token = Auth::guard('api')->attempt($credentials)) {
             return response()->json(['error' => 'Invalid credentials'], 401);
         }
