@@ -133,29 +133,25 @@ class ChatController extends Controller
     {
         $request->validate([
             'file' => [
-                'required',
-                'file',
-                'max:10240', // 10MB max
+                'required', 'file', 'max:10240',
                 'mimes:jpg,jpeg,png,gif,webp,pdf,doc,docx,txt,zip',
             ],
         ]);
 
         $userId = Auth::id();
 
-        // Security — user must belong to this conversation
-        Conversation::where('id', $conversationId)
+        $conversation = Conversation::where('id', $conversationId)  
             ->where(function($q) use ($userId) {
                 $q->where('user_one_id', $userId)
                 ->orWhere('user_two_id', $userId);
             })->firstOrFail();
 
-        $file      = $request->file('file');
-        $filePath  = $file->store('uploads', 'public');
-        $fileName  = $file->getClientOriginalName();
-        $fileType  = $file->getMimeType();
-        $fileSize  = $file->getSize();
+        $file     = $request->file('file');
+        $filePath = $file->store('uploads', 'public');
+        $fileName = $file->getClientOriginalName();
+        $fileType = $file->getMimeType();
+        $fileSize = $file->getSize();
 
-        // Create the message with file info
         $message = Message::create([
             'conversation_id' => $conversationId,
             'sender_id'       => $userId,
@@ -166,8 +162,7 @@ class ChatController extends Controller
             'file_size'       => $fileSize,
         ]);
 
-        $conversation->update(['last_message_at' => now()]);
-
+        $conversation->update(['last_message_at' => now()]);  // ← now $conversation exists
         broadcast(new MessageSent($message))->toOthers();
 
         return response()->json($message->load(['sender', 'replyTo.sender']), 201);
