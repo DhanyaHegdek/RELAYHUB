@@ -11,6 +11,10 @@ class Message extends Model
         'body',
         'reply_to_id',
         'read_at',
+        'file_path',
+        'file_name',
+        'file_type',
+        'file_size',
     ];
 
     // Message belongs to a conversation
@@ -31,5 +35,19 @@ class Message extends Model
     // Message can have many replies
     public function replies() {
         return $this->hasMany(Message::class, 'reply_to_id');
+    }
+
+    public function isImage(): bool
+    {
+        return str_starts_with($this->file_type ?? '', 'image/');
+    }
+
+    // Helper — formatted file size
+    public function getFileSizeFormattedAttribute(): string
+    {
+        if (!$this->file_size) return '';
+        if ($this->file_size < 1024) return $this->file_size . ' B';
+        if ($this->file_size < 1048576) return round($this->file_size / 1024, 1) . ' KB';
+        return round($this->file_size / 1048576, 1) . ' MB';
     }
 }
