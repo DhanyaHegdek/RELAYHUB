@@ -167,4 +167,24 @@ class ChatController extends Controller
 
         return response()->json($message->load(['sender', 'replyTo.sender']), 201);
     }
+
+    public function getFiles($conversationId)
+    {
+        $userId = Auth::id();
+
+        Conversation::where('id', $conversationId)
+            ->where(function($q) use ($userId) {
+                $q->where('user_one_id', $userId)
+                ->orWhere('user_two_id', $userId);
+            })->firstOrFail();
+
+        $files = Message::where('conversation_id', $conversationId)
+            ->whereNotNull('file_path')
+            ->with('sender')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return response()->json($files);
+    }
+
 }

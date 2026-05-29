@@ -57,4 +57,6 @@ Route::middleware('auth:api')->group(function () {
 
     Route::post('/conversations/{id}/upload', [ChatController::class, 'uploadFile']);
 
+    Route::get('/conversations/{id}/files', [ChatController::class, 'getFiles']);
+
 });
