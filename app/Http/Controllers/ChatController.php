@@ -128,4 +128,48 @@ class ChatController extends Controller
 
         return response()->json($messages);
     }
+
+    public function uploadFile(Request $request, $conversationId)
+    {
+        $request->validate([
+            'file' => [
+                'required',
+                'file',
+                'max:10240', // 10MB max
+                'mimes:jpg,jpeg,png,gif,webp,pdf,doc,docx,txt,zip',
+            ],
+        ]);
+
+        $userId = Auth::id();
+
+        // Security — user must belong to this conversation
+        Conversation::where('id', $conversationId)
+            ->where(function($q) use ($userId) {
+                $q->where('user_one_id', $userId)
+                ->orWhere('user_two_id', $userId);
+            })->firstOrFail();
+
+        $file      = $request->file('file');
+        $filePath  = $file->store('uploads', 'public');
+        $fileName  = $file->getClientOriginalName();
+        $fileType  = $file->getMimeType();
+        $fileSize  = $file->getSize();
+
+        // Create the message with file info
+        $message = Message::create([
+            'conversation_id' => $conversationId,
+            'sender_id'       => $userId,
+            'body'            => '',
+            'file_path'       => $filePath,
+            'file_name'       => $fileName,
+            'file_type'       => $fileType,
+            'file_size'       => $fileSize,
+        ]);
+
+        $conversation->update(['last_message_at' => now()]);
+
+        broadcast(new MessageSent($message))->toOthers();
+
+        return response()->json($message->load(['sender', 'replyTo.sender']), 201);
+    }
 }
