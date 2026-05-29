@@ -55,4 +55,6 @@ Route::middleware('auth:api')->group(function () {
         return Broadcast::auth($request);
     });
 
+    Route::post('/conversations/{id}/upload', [ChatController::class, 'uploadFile']);
+
 });
