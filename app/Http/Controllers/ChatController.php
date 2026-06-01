@@ -226,6 +226,7 @@ class ChatController extends Controller
         if ($bytes < 1073741824) return round($bytes / 1048576, 1) . ' MB';
         return round($bytes / 1073741824, 2) . ' GB';
     }
+
     public function getFiles($conversationId)
     {
         $userId = Auth::id();
@@ -243,6 +244,19 @@ class ChatController extends Controller
             ->get();
 
         return response()->json($files);
+    }
+
+    public function storageInfo()
+    {
+        $user = Auth::user();
+        return response()->json([
+            'used'       => $user->storage_used,
+            'quota'      => $user->storage_quota,
+            'remaining'  => $user->storageRemaining(),
+            'percentage' => $user->storagePercentage(),
+            'used_fmt'   => $user->storage_used_formatted,
+            'quota_fmt'  => $user->storage_quota_formatted,
+        ]);
     }
 
 }
