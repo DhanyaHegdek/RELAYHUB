@@ -18,6 +18,8 @@ class User extends Authenticatable implements JWTSubject
         'email',
         'password',
         'bio',
+        'storage_used',
+        'storage_quota',
     ];
 
     protected $hidden = [
@@ -52,5 +54,37 @@ class User extends Authenticatable implements JWTSubject
     public function messages()
     {
         return $this->hasMany(Message::class, 'sender_id');
+    }
+
+    // how much storage is left
+    public function storageRemaining(): int
+    {
+        return $this->storage_quota - $this->storage_used;
+    }
+
+    // percentage used
+    public function storagePercentage(): float
+    {
+        if ($this->storage_quota === 0) return 100;
+        return round(($this->storage_used / $this->storage_quota) * 100, 1);
+    }
+
+    // formatted used
+    public function getStorageUsedFormattedAttribute(): string
+    {
+        return $this->formatBytes($this->storage_used);
+    }
+
+    // formatted quota
+    public function getStorageQuotaFormattedAttribute(): string
+    {
+        return $this->formatBytes($this->storage_quota);
+    }
+
+    private function formatBytes(int $bytes): string
+    {
+        if ($bytes < 1048576) return round($bytes / 1024, 1) . ' KB';
+        if ($bytes < 1073741824) return round($bytes / 1048576, 1) . ' MB';
+        return round($bytes / 1073741824, 2) . ' GB';
     }
 }
