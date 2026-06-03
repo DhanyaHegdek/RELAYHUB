@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Eloquent\Builder;
 use App\Events\MessageSent;
 
+
 class ChatController extends Controller
 {
     // Start or get existing conversation with someone
@@ -133,9 +134,7 @@ class ChatController extends Controller
     {
         $request->validate([
             'file' => [
-                'required',
-                'file',
-                'max:10240', // 10MB raw max
+                'required', 'file', 'max:10240',
                 'mimes:jpg,jpeg,png,gif,webp,pdf,doc,docx,txt,zip',
             ],
         ]);
@@ -143,7 +142,6 @@ class ChatController extends Controller
         $userId = Auth::id();
         $user   = Auth::user();
 
-        // Security — user must belong to this conversation
         $conversation = Conversation::where('id', $conversationId)
             ->where(function($q) use ($userId) {
                 $q->where('user_one_id', $userId)
@@ -151,58 +149,25 @@ class ChatController extends Controller
             })->firstOrFail();
 
         $file     = $request->file('file');
-        $fileType = $file->getMimeType();
+        $fileSize = $file->getSize();
         $fileName = $file->getClientOriginalName();
+        $fileType = $file->getMimeType();
 
-        // ── Image compression 
-        if (str_starts_with($fileType, 'image/')) {
-            // Compress image — resize to max 1200px wide, 80% quality
-            $image    = \Intervention\Image\Facades\Image::make($file);
-            $image->resize(1200, null, function ($constraint) {
-                $constraint->aspectRatio();
-                $constraint->upsize(); // don't enlarge small images
-            });
-
-            $encoded  = $image->encode('jpg', 80);
-            $fileSize = strlen($encoded);
-
-            // Check quota AFTER compression (use compressed size)
-            if ($user->storageRemaining() < $fileSize) {
-                return response()->json([
-                    'error'     => 'Storage quota exceeded',
-                    'used'      => $user->storage_used_formatted,
-                    'quota'     => $user->storage_quota_formatted,
-                    'remaining' => $this->formatBytes($user->storageRemaining()),
-                ], 422);
-            }
-
-            // Save compressed image
-            $filePath = 'uploads/' . uniqid() . '_' . time() . '.jpg';
-            \Illuminate\Support\Facades\Storage::disk('public')->put($filePath, $encoded);
-            $fileType = 'image/jpeg'; // standardize to jpeg
-            $fileName = pathinfo($fileName, PATHINFO_FILENAME) . '.jpg';
-
-        // ── Document / other files 
-        } else {
-            $fileSize = $file->getSize();
-
-            // Check quota
-            if ($user->storageRemaining() < $fileSize) {
-                return response()->json([
-                    'error'     => 'Storage quota exceeded',
-                    'used'      => $user->storage_used_formatted,
-                    'quota'     => $user->storage_quota_formatted,
-                    'remaining' => $this->formatBytes($user->storageRemaining()),
-                ], 422);
-            }
-
-            $filePath = $file->store('uploads', 'public');
+        // Check quota
+        if ($user->storageRemaining() < $fileSize) {
+            return response()->json([
+                'error' => 'Storage quota exceeded',
+                'used'  => $user->storage_used_formatted,
+                'quota' => $user->storage_quota_formatted,
+            ], 422);
         }
 
-        // ── Update user's storage usage
+        // Store file directly (no compression for now)
+        $filePath = $file->store('uploads', 'public');
+
+        // Update storage usage
         $user->increment('storage_used', $fileSize);
 
-        // ── Save message 
         $message = Message::create([
             'conversation_id' => $conversationId,
             'sender_id'       => $userId,
@@ -218,7 +183,6 @@ class ChatController extends Controller
 
         return response()->json($message->load(['sender', 'replyTo.sender']), 201);
     }
-
     // ── Helper
     private function formatBytes(int $bytes): string
     {
