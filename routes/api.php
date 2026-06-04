@@ -59,5 +59,6 @@ Route::middleware('auth:api')->group(function () {
     Route::get('/conversations/{id}/files', [ChatController::class, 'getFiles']);
 
     Route::get('/storage-info', [ChatController::class, 'storageInfo']);
+    Route::post('/profile/avatar', [ProfileController::class, 'uploadAvatar']);
 
 });

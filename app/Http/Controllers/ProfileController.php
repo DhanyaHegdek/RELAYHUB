@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Storage;
 
 class ProfileController extends Controller
 {
@@ -21,6 +22,7 @@ class ProfileController extends Controller
             'email' => $user->email,
             'bio'   => $user->bio,
             'role'  => $user->roles->first()?->name ?? 'user',
+            'avatar' => $user->avatar,
         ]);
     }
 
@@ -55,6 +57,34 @@ class ProfileController extends Controller
             'email' => $user->email,
             'bio'   => $user->bio,
             'role'  => $user->roles->first()?->name ?? 'user',
+            'avatar' => $user->avatar,
+        ]);
+    }
+
+    public function uploadAvatar(Request $request)
+    {
+        $request->validate([
+            'avatar' => 'required|image|mimes:jpg,jpeg,png,webp|max:2048',
+        ]);
+
+        $user = Auth::guard('api')->user();
+
+        // Delete old avatar if exists
+        if ($user->avatar && Storage::disk('public')->exists($user->avatar)) {
+            Storage::disk('public')->delete($user->avatar);
+        }
+
+        $path = $request->file('avatar')->store('avatars', 'public');
+        $user->avatar = $path;
+        $user->save();
+
+        return response()->json([
+            'id'     => $user->id,
+            'name'   => $user->name,
+            'email'  => $user->email,
+            'bio'    => $user->bio,
+            'role'   => $user->roles->first()?->name ?? 'user',
+            'avatar' => $user->avatar,
         ]);
     }
 }
