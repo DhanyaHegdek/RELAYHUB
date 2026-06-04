@@ -54,10 +54,10 @@ class AuthController extends Controller
     }
 
     public function me()
-    {
-        $user = Auth::guard('api')->user();
-        return response()->json($this->formatUser($user));
-    }
+{
+    $user = Auth::guard('api')->user()->load('roles'); 
+    return response()->json($this->formatUser($user));
+}
 
     //Format user with role included — React needs this to know whether to show the Admin panel or not
      
