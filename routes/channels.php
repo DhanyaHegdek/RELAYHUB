@@ -9,9 +9,21 @@ Broadcast::channel('App.Models.User.{id}', function ($user, $id) {
 
  
 Broadcast::channel('conversation.{conversationId}', function ($user, $conversationId) {
-    return Conversation::where('id', $conversationId)
-        ->where(function($q) use ($user) {
+
+    $exists = Conversation::where('id', $conversationId)
+        ->where(function ($q) use ($user) {
             $q->where('user_one_id', $user->id)
               ->orWhere('user_two_id', $user->id);
-        })->exists();
+        })
+        ->exists();
+
+    if (!$exists) {
+        return false;
+    }
+
+    return [
+        'id' => $user->id,
+        'name' => $user->name,
+    ];
 });
+

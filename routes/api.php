@@ -33,13 +33,12 @@ Route::middleware('auth:api')->group(function () {
     });
 
     // Chat — requires chat permission 
-    Route::middleware('permission:chat')->group(function () {
-        Route::post('/conversations',               [ChatController::class, 'startConversation']);
-        Route::get('/conversations',                [ChatController::class, 'getConversations']);
-        Route::get('/conversations/{id}/messages',  [ChatController::class, 'getMessages']);
-        Route::post('/conversations/{id}/messages', [ChatController::class, 'sendMessage']);
-        Route::get('/conversations/{id}/messages/search', [ChatController::class, 'searchMessages']);
-    });
+   
+    Route::post('/conversations',               [ChatController::class, 'startConversation']);
+    Route::get('/conversations',                [ChatController::class, 'getConversations']);
+    Route::get('/conversations/{id}/messages',  [ChatController::class, 'getMessages']);
+    Route::post('/conversations/{id}/messages', [ChatController::class, 'sendMessage']);
+    Route::get('/conversations/{id}/messages/search', [ChatController::class, 'searchMessages']);
 
     // Admin — requires admin role 
     Route::middleware('role:admin')->prefix('admin')->group(function () {
