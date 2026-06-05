@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Role;
+use App\Events\RoleChanged;
 
 class AdminController extends Controller
 {
@@ -89,6 +90,7 @@ class AdminController extends Controller
 
     //PUT /api/admin/users/{id}/role Change a user's role (promote to admin or demote to user)
      
+
     public function changeRole(Request $request, $id)
     {
         $request->validate([
@@ -101,8 +103,10 @@ class AdminController extends Controller
             return response()->json(['error' => 'You cannot change your own role.'], 403);
         }
 
-        // Remove all existing roles and assign the new one
         $user->syncRoles([$request->role]);
+
+        // Broadcast role change to that user instantly
+        broadcast(new RoleChanged($user->id, $request->role));
 
         return response()->json([
             'message' => "Role updated to {$request->role} successfully.",
